@@ -1,0 +1,4 @@
+ip: 192.168.1.107
+puerto: 4840
+nombre variable tf direct opc: sensor 10
+nombre variable tf rec_spect opc: sensor 5
