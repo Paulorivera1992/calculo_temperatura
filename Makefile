@@ -6,5 +6,5 @@ calculo_Tf: calculo_Tf.c
 	gcc calculo_Tf.c -o calculo_Tf $(LIB)
 
 clean:
-	rm -f Tf_direct Tf_rec_spect
+	rm -f calculo_Tf
 
