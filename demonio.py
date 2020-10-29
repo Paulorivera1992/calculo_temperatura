@@ -5,7 +5,8 @@ import logging.handlers
 import os
 import time
 from daemon import runner
-import Funciones_Tf 
+import Funciones 
+
 
 class App():
    def __init__(self):
@@ -17,24 +18,22 @@ class App():
 
    def run(self):
       estatus=False;
-      Funciones_Tf.crear_archivos_de_datos('/home/ubuntu/calculo_temperatura/archivos_temperatura/Tf_direct.txt','/home/ubuntu/calculo_temperatura/archivos_temperatura/Tf_rec_spect.txt')
-      ip=Funciones_Tf.cargar_ip('/home/ubuntu//calculo_temperatura/configuracion.txt')
-      puerto=Funciones_Tf.cargar_puerto('/home/ubuntu/calculo_temperatura/configuracion.txt')
-      Funciones_Tf.comprobar_ip(ip,logger)
+      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama.tiff'
+      nombre_archivo_configuracion='/home/ubuntu/calculo_temperatura/configuracion.txt'
+      nombre_archivo_buffet='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet.txt'
+      Funciones.crear_archivos_de_datos(nombre_archivo_buffet)
+      ip=Funciones.cargar_ip(nombre_archivo_configuracion)
+      puerto=Funciones.cargar_puerto(nombre_archivo_configuracion)
+      Funciones.comprobar_ip(ip,logger)
       servidor="opc.tcp://"+ip+":"+puerto  
-      nombre_tf_direct=Funciones_Tf.cargar_nombre_tf_direct('/home/ubuntu/calculo_temperatura/configuracion.txt')
-      nombre_tf_rec_spect=Funciones_Tf.cargar_nombre_tf_rec_spect('/home/ubuntu/calculo_temperatura/configuracion.txt')
-      Funciones_Tf.cambiar_tipo(servidor,nombre_tf_direct,"Tf_direct",logger)
-      Funciones_Tf.cambiar_tipo(servidor,nombre_tf_rec_spect,"Tf_rec_spect",logger)
-      Funciones_Tf.cambiar_nombre(servidor,nombre_tf_direct,"quemador1",logger)
-      Funciones_Tf.cambiar_nombre(servidor,nombre_tf_rec_spect,"quemador1",logger)
+      nombre_sensor=Funciones.cargar_nombre_sensor(nombre_archivo_configuracion)
       while True:
-         nombre_archivo='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama.tiff'
-         estatus=Funciones_Tf.save_image(nombre_archivo,logger)
+         
+         estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
+         estatus_e=False#estado espectrometro
          logger.info('Procesando nueva imagen')
-         Funciones_Tf.Tf(nombre_archivo,logger)
-         Funciones_Tf.escribir_datos(servidor,'/home/ubuntu/calculo_temperatura/archivos_temperatura/Tf_direct.txt',nombre_tf_direct,estatus,logger)  
-         Funciones_Tf.escribir_datos(servidor,'/home/ubuntu/calculo_temperatura/archivos_temperatura/Tf_rec_spect.txt',nombre_tf_rec_spect,estatus,logger) 
+         Funciones.algoritmos(nombre_archivo_imagen,logger)
+         Funciones.escribir_datos(servidor,nombre_archivo_buffet,nombre_sensor,estatus_c,estatus_e,logger)  
 
 if __name__ == '__main__':
    app = App()
