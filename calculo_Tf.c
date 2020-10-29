@@ -8,48 +8,76 @@
 
 double max(double a, double b, double c);
 double countingSort (double *numbers, int size, double *B, double *C,int perc);
-void *TF(char *filename, double *temper);
-void leer_matriz_T(double *T);
-void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Temperatura);
+void *TF(char *filename, double *temper, double *radg);
+void leer_matriz_T(double **T, int numero_muestras);
+void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Temperatura , double *radgV2);
+double Radp_estimado(double **T,double R[3],int num_muestras);
+void leer_vector(double *R, int num_medidas, char *ruta);
+double trapezoidal(double *inten, double *longi, double *calib, int min, int max);
+double calculo_radt();
 
 ///////////////////funcion principal////////////////////////////////////////
 int main(int argc, char* argv[])
 {
+  //archivos iniciales
   time_t t;
   struct tm *tm;
-  char datos_direct[100];
-  char datos_rec_spect[100];
-  FILE* Tf_direct;
-  FILE* Tf_rec_spect;
-  Tf_direct = fopen("archivos_temperatura/Tf_direct.txt", "at");
-  Tf_rec_spect = fopen("archivos_temperatura/Tf_rec_spect.txt", "at");
+  char datos_bufet[300];
+  FILE* bufet_file;
+  bufet_file = fopen("archivos_buffet/Bufet.txt", "at");
   char tempe_direct[100];
   char tempe_spect[100];
+  char rad_direct[100];
+  char rad_spect[100];
+  char rad1[100];
+  char radt[100];
+  char soot[100];
   double temperatura[2];
+  double radg[3];
+  double Radt=0;
+  double sot=0; //hollin
   
-  TF(argv[1],temperatura);
+  //obtencion de temperatura y radg
+  TF(argv[1],temperatura,radg);
+  Radt=calculo_radt();
+  
+  //transformo mediciones en cadenas de texto
   gcvt(temperatura[0], 15, tempe_direct); 
   gcvt(temperatura[1], 15, tempe_spect); 
+  gcvt(radg[0], 15, rad_direct); 
+  gcvt(radg[1], 15, rad_spect); 
+  gcvt(radg[2], 15, rad1); 
+  gcvt(Radt, 15, radt);
+  gcvt(sot, 15, soot); 
   
+  //marca de tiempos
   t=time(NULL);
   tm=localtime(&t);
-  strftime(datos_direct, 100, "%d/%m/%Y %H:%M:%S", tm);
-  strftime(datos_rec_spect, 100, "%d/%m/%Y %H:%M:%S", tm);
+  strftime(datos_bufet, 100, "%d/%m/%Y %H:%M:%S", tm);
   
+  //creacion de string a escribir en archivo con fomato tiempo valor
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,tempe_direct);
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,tempe_spect);
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,rad_direct);
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,rad_spect);
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,rad1);
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,radt);
+  strcat(datos_bufet," ");
+  strcat(datos_bufet,soot);
+  strcat(datos_bufet,"\n");
   
-  strcat(datos_direct," ");
-  strcat(datos_rec_spect," ");
-  strcat(datos_direct,tempe_direct);
-  strcat(datos_rec_spect,tempe_spect);
-  strcat(datos_direct,"\n");
-  strcat(datos_rec_spect,"\n");
-  
-  fputs(datos_direct, Tf_direct);
-  fputs(datos_rec_spect, Tf_rec_spect);
+  //escritura de datos
+  fputs(datos_bufet,bufet_file);
 
+  //cerramos los archivos
+  fclose(bufet_file); 
 
-  fclose(Tf_direct); 
-  fclose(Tf_rec_spect);
   return 0;
 }
 
@@ -91,7 +119,7 @@ double countingSort (double *numbers, int size, double *B, double *C,int perc) {
 }
 
 //////////////////////calculo de temperatura /////////////////////////////////
-void *TF(char *filename,double *temp){
+void *TF(char *filename,double *temp, double *radg){
   int ancho, alto;
 	int numero_pixeles;
   double* matriz_R;
@@ -154,8 +182,8 @@ void *TF(char *filename,double *temp){
   
  
   //////////calculo temperatura//////////////////////7
-  calculo_temperatura(matriz_R,matriz_G, matriz_B,numero_pixeles,temp);
-  
+  calculo_temperatura(matriz_R,matriz_G, matriz_B,numero_pixeles,temp,radg);
+    
   free(b1);
   free(c1);
   free(value);
@@ -165,19 +193,35 @@ void *TF(char *filename,double *temp){
 }
 
 /////////////////calculo de temperaturas///////////////////////////////////
-void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Temperatu){
+void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Temperatu, double *radgV2){
   double lambda_B=473.5*pow(10,-9);
   double lambda_G=540*pow(10,-9);
   double lambda_R=615*pow(10,-9);
   double pl1=580*pow(10,-9);
   double pl2=620*pow(10,-9);
-  double T[6];
-  leer_matriz_T(T);
+  int i1 = 813; //espectro en 580 nm
+  int i2 = 989; // espectro en 620 nm
+  double sigma=5.67*pow(10,-8);      // constante de Boltzmann
+  double Ap=4.8*pow(10,-6)*4.8*pow(10,-6); //area del pixel de la camara
+  int epsilon=1;          // emisividad de llama
+  int t_amb=25+273;       // temperatura ambiente
+  double **T = NULL;
+  int num_muestras=1339;
+  T=(double **)malloc(num_muestras*sizeof(double *)); 
+  // se reserva memoria para cada fila
+ 	for (int i = 0; i < num_muestras; i = i + 1) {
+    	T[i]= (double*)malloc(3*sizeof(double));
+  	}
+  leer_matriz_T(T, num_muestras);
   double suma_tf_rec_spect=0; 
   double suma_tf_direct=0;
+  double suma_Radp_direct=0;
+  double suma_Radp_rec_spect=0;
+  double suma_Radp2=0;
   double maxTf=3000;         // limite superior de Temperatura
   double minTf=1000;         // limite inferior de Temperatura
   double c2=1.4385*pow(10,-2); 
+  double C=0.0214;
   int numero_no_zero=0;
   double rho[3];
   double Temperatura[2];
@@ -204,10 +248,11 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
         }
       else {//minTf < Tf < maxTf valor correcto
         suma_tf_direct=suma_tf_direct + temp_direct;
+        suma_Radp_direct=suma_Radp_direct+Ap*epsilon*sigma*(pow(temp_direct,4) - pow(t_amb,4));//calculo de radiacion de imagen
         } 
      /*********************temperatura recuperación espectral****************/  
-      double pE1 = T[0]*rho[0]+ T[1]*rho[1]+ T[2]*rho[2]; //faltan los valores de T
-      double pE2 = T[3]*rho[0]+ T[4]*rho[1]+ T[5]*rho[2]; //faltan los valores de T
+      double pE1 = T[i1-1][0]*rho[0]+ T[i1-1][1]*rho[1]+ T[i1-1][2]*rho[2]; //faltan los valores de T
+      double pE2 = T[i2-1][0]*rho[0]+ T[i2-1][1]*rho[1]+ T[i2-1][2]*rho[2]; //faltan los valores de T
       num=(c2*(pl1-pl2)/(pl1*pl2));//numerador de la ecuacion
       denom=(log((pE1*pow(pl1,5))/(pE2*pow(pl2,5))));//denominador de la ecuacion
       double temp_re=num/denom; //temperatura calculada
@@ -223,6 +268,8 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
       }    
       else {//minTf < Tf < maxTf valor correcto
         suma_tf_rec_spect=suma_tf_rec_spect + temp_re;
+        suma_Radp_rec_spect=suma_Radp_rec_spect+Ap*epsilon*sigma*(pow(temp_re,4) - pow(t_amb,4));//calculo de radiacion de imagen
+        suma_Radp2=suma_Radp2+Radp_estimado(T,rho,num_muestras);
       }  
     } 
     /************************************************************************/
@@ -236,18 +283,70 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
   if(numero_no_zero==0){
     Temperatu[0]= 0;
     Temperatu[1]= 0; 
-  }  
+  }
+  radgV2[0]=suma_Radp_direct;
+  radgV2[1]=suma_Radp_rec_spect;
+  radgV2[2]=C*suma_Radp2;
+  for (int i = 0; i < num_muestras; i = i + 1) {
+    	free(T[i]);
+  	}
+  free(T);  
 }
 
 //////////carga elementos de la matriz T/////////////////////////////
-void leer_matriz_T(double *T){ 
+void leer_matriz_T(double **T, int numero_muestras){ 
   FILE* fichero;
   fichero = fopen("T.txt", "r");
-  fscanf(fichero, "%lf", &T[0]);
-  fscanf(fichero, "%lf", &T[1]);
-  fscanf(fichero, "%lf", &T[2]);
-  fscanf(fichero, "%lf", &T[3]);
-  fscanf(fichero, "%lf", &T[4]);
-  fscanf(fichero, "%lf", &T[5]);
+  for(int a=1; !feof(fichero); a++){
+      if(a>numero_muestras) break;
+      fscanf(fichero,"%lf %lf %lf",&T[a-1][0],&T[a-1][1],&T[a-1][2]);
+    }
+  fclose(fichero);  
+}
+
+//////calculo radp con espectro estimado//////////////////////////77
+double Radp_estimado(double **T,double R[3],int num_muestras){
+  double Espectro_E[num_muestras];
+  double Radp=0;
+  for(int i=0;i<num_muestras;i++){
+    Espectro_E[i]=T[i][0]*R[0]+ T[i][1]*R[1]+ T[i][2]*R[2];
+  }
+  for(int j=1;j<num_muestras;j++){
+    Radp=Radp+0.5*(Espectro_E[j]-Espectro_E[j-1]);
+  }
+  return Radp;
+}
+
+//////////carga elementos de vector/////////////////////////////
+void leer_vector(double *R, int num_medidas,char *ruta){ 
+  FILE* fichero;
+  int a;
+  fichero = fopen(ruta, "r");
+  for(a=1; !feof(fichero); a++){
+      if(a>num_medidas) break;
+      fscanf(fichero,"%lf",&R[a-1]);
+    }
   fclose(fichero);
+}
+
+double trapezoidal(double *inten, double *longi, double *calib, int min, int max){
+  double area=0;
+  for(int j=min-1;j<max;j++){
+   area=area+0.5*((longi[j]-longi[j-1])*(calib[j]*inten[j]+calib[j-1]*inten[j-1]));
+  }
+  return area;
+}
+
+double calculo_radt(){
+  int numero_datos=3648;
+  int i_min=961;
+  int i_max=2724;
+  double *intensidades=(double *)malloc(numero_datos*sizeof(double)); 
+  double *longitud=(double *)malloc(numero_datos*sizeof(double)); 
+  double *calibracion=(double *)malloc(numero_datos*sizeof(double));
+  leer_vector(intensidades,numero_datos,"/home/ubuntu/calculo_temperatura/espectro_llama/espectro.txt");
+  leer_vector(longitud,numero_datos,"/home/ubuntu/calculo_temperatura/espectro_llama/wavelength.txt");
+  leer_vector(calibracion,numero_datos,"/home/ubuntu/calculo_temperatura/espectro_llama/calib.txt");
+  double radt=0.001*trapezoidal(intensidades,longitud,calibracion,i_min,i_max);
+  return radt; 
 }
