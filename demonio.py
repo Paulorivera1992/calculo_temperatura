@@ -19,7 +19,7 @@ class App():
    def run(self):
       estatus_c=False;
       estatus_e=False;
-      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama (1).tiff'
+      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama.tiff'
       nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro/intensidad.txt'
       nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro/longitud.txt'
       nombre_archivo_configuracion='/home/ubuntu/calculo_temperatura/configuracion.txt'
@@ -32,7 +32,7 @@ class App():
       servidor="opc.tcp://"+ip+":"+puerto  
       nombre_sensor=Funciones.cargar_nombre_sensor(nombre_archivo_configuracion)
       while True:
-        # estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
+         estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
          estatus_e=Funciones.save_spect(nombre_archivo_intensidad,nombre_archivo_wavelengths,logger) #False#estado espectrometro
          Funciones.algoritmos_radg_TF(nombre_archivo_imagen,logger)
          d_soot=Funciones.Soot_propensity(nombre_archivo_imagen,logger)
