@@ -17,10 +17,14 @@ class App():
       self.pidfile_timeout = 1
 
    def run(self):
-      estatus=False;
-      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama.tiff'
+      estatus_c=False;
+      estatus_e=False;
+      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama (1).tiff'
+      nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro/intensidad.txt'
+      nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro/longitud.txt'
       nombre_archivo_configuracion='/home/ubuntu/calculo_temperatura/configuracion.txt'
       nombre_archivo_buffet='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet.txt'
+      nombre_archivo_buffet_soot='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet_soot.txt'
       Funciones.crear_archivos_de_datos(nombre_archivo_buffet)
       ip=Funciones.cargar_ip(nombre_archivo_configuracion)
       puerto=Funciones.cargar_puerto(nombre_archivo_configuracion)
@@ -28,12 +32,13 @@ class App():
       servidor="opc.tcp://"+ip+":"+puerto  
       nombre_sensor=Funciones.cargar_nombre_sensor(nombre_archivo_configuracion)
       while True:
-         
-         estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
-         estatus_e=False#estado espectrometro
-         logger.info('Procesando nueva imagen')
-         Funciones.algoritmos(nombre_archivo_imagen,logger)
+        # estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
+         estatus_e=Funciones.save_spect(nombre_archivo_intensidad,nombre_archivo_wavelengths,logger) #False#estado espectrometro
+         Funciones.algoritmos_radg_TF(nombre_archivo_imagen,logger)
+         d_soot=Funciones.Soot_propensity(nombre_archivo_imagen,logger)
+         Funciones.escribir_soot_en_bufer(nombre_archivo_buffet_soot,d_soot) #liena de paso mientras se establecen las variables para soot_propensity
          Funciones.escribir_datos(servidor,nombre_archivo_buffet,nombre_sensor,estatus_c,estatus_e,logger)  
+         Funciones.escribir_datos2(servidor,nombre_archivo_buffet_soot,nombre_sensor,logger)  
 
 if __name__ == '__main__':
    app = App()
