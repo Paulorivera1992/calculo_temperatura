@@ -17,6 +17,7 @@ from scipy.stats import skew
 from scipy.stats import kurtosis
 from skimage.transform import resize
 from skimage.transform import rescale
+from seabreeze.spectrometers import Spectrometer
 
 ################################################adquisicion de imagenes#################################################################
 
@@ -52,7 +53,7 @@ def save_image(ruta,logger):
 
 ################################################adquisicion de espectros#################################################################
 def save_spect(ruta_intensidad,ruta_longitud,logger):
-  try:
+ # try:
       spec = Spectrometer.from_first_available()
       spec.integration_time_micros(20000)
   
@@ -67,9 +68,9 @@ def save_spect(ruta_intensidad,ruta_longitud,logger):
       f.close()
       return True
       
-  except: #excepcion en caso de que el espectrometro no este conectada
-      logger.error("Error conectando el espectrometro") 
-      return False  
+ # except: #excepcion en caso de que el espectrometro no este conectada
+  #    logger.error("Error conectando el espectrometro") 
+  #    return False  
  
 ################################################calculo de radg y TF#################################################################      
 

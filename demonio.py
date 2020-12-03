@@ -20,8 +20,8 @@ class App():
       estatus_c=False;
       estatus_e=False;
       nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama.tiff'
-      nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro/intensidad.txt'
-      nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro/longitud.txt'
+      nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro_llama/espectro.txt'
+      nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro_llama/wavelength.txt'
       nombre_archivo_configuracion='/home/ubuntu/calculo_temperatura/configuracion.txt'
       nombre_archivo_buffet='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet.txt'
       nombre_archivo_buffet_soot='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet_soot.txt'
