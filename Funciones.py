@@ -53,7 +53,7 @@ def save_image(ruta,logger):
 
 ################################################adquisicion de espectros#################################################################
 def save_spect(ruta_intensidad,ruta_longitud,logger):
- # try:
+  try:
       spec = Spectrometer.from_first_available()
       spec.integration_time_micros(20000)
   
@@ -68,17 +68,18 @@ def save_spect(ruta_intensidad,ruta_longitud,logger):
       f.close()
       return True
       
- # except: #excepcion en caso de que el espectrometro no este conectada
-  #    logger.error("Error conectando el espectrometro") 
-  #    return False  
+  except: #excepcion en caso de que el espectrometro no este conectada
+      logger.error("Error conectando el espectrometro") 
+      return False  
  
 ################################################calculo de radg y TF#################################################################      
 
-def algoritmos_radg_TF(ruta,logger):
+def algoritmos_radg_TF(ruta_img,ruta_intensidad,ruta_longitud,ruta_calibracion,ruta_buffet,logger):
   try:
-    completed = subprocess.run(['./calculo_Tf',ruta], check=True, cwd="/home/ubuntu/calculo_temperatura/") 
+    completed = subprocess.run(['./calculo_Tf',ruta_img,ruta_intensidad,ruta_longitud,ruta_calibracion,ruta_buffet], check=True, cwd="/home/ubuntu/calculo_temperatura/") 
   except subprocess.CalledProcessError as err:
       logger.error('Error en la ejecucion del algoritmo:', err)
+      
       
 ################################################calculo de soot propensity#################################################################      
 
@@ -248,12 +249,12 @@ def cambiar_valor2(server,nodo,avg_fv,median_fv,std_fv,moda_fv,perc50_fv,mom2_fv
         variable2[20].set_value(skew3_fv)
         variable2[21].set_value(kurt_fv)
       else:
-        logger.warning("No se encuentra el nodo en el servidor opc 2")
+        logger.warning("No se encuentra el nodo en el servidor opc")
       
       client.disconnect()
   
   except: 
-      logger.error("No se puede conectar con el servidor opc 2")
+      logger.error("No se puede conectar con el servidor opc")
       
 
 def escribir_datos(server,archivo,nodo,status_camara,status_espectrometro,logger):

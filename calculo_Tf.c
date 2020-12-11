@@ -14,7 +14,7 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
 double Radp_estimado(double **T,double R[3],int num_muestras);
 void leer_vector(double *R, int num_medidas, char *ruta);
 double trapezoidal(double *inten, double *longi, double *calib, int min, int max);
-double calculo_radt();
+double calculo_radt(char *filename1, char *filename2, char *filename3);
 
 ///////////////////funcion principal////////////////////////////////////////
 int main(int argc, char* argv[])
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   struct tm *tm;
   char datos_bufet[300];
   FILE* bufet_file;
-  bufet_file = fopen("archivos_buffet/Bufet.txt", "at");
+  bufet_file = fopen(argv[5], "at");
   char tempe_direct[100];
   char tempe_spect[100];
   char rad_direct[100];
@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   
   //obtencion de temperatura y radg
   TF(argv[1],temperatura,radg);
-  Radt=calculo_radt();
+  Radt=calculo_radt(argv[2],argv[3],argv[4]);
   
   //transformo mediciones en cadenas de texto
   gcvt(temperatura[0], 15, tempe_direct); 
@@ -223,14 +223,17 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
   double c2=1.4385*pow(10,-2); 
   double C=0.0214;
   int numero_no_zero=0;
+  int numero_no_zero1=0;
   double rho[3];
   double Temperatura[2];
+  double suma=0;
   for(int i=0;i<num_pixel;i++) {
     rho[0]=(double)R[i];
     rho[1]=(double)0.7677*G[i];
     rho[2]=(double)0.3197*B[i];
     if(rho[0] >= 0.03 && rho[0] < 0.99 && rho[1] >= 0.01 && rho[1] < 0.99){
       numero_no_zero=numero_no_zero+1;
+      numero_no_zero1=numero_no_zero1+1;
       /***************************temperatura direct*****************************/
       double SS=0.3653*(pow((rho[0]/(rho[1]/0.7677)),2))-1.669*(rho[0]/(rho[1]/0.7677)) + 3.392;   // factor de forma obtenido experimental
       double num=c2*(1/(lambda_G)-1/(lambda_R));               //numerador de la ecuacion
@@ -238,7 +241,8 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
       double temp_direct=num/denom; //temperatura calculada
       //test sobrepaso limites
       if(isnan(temp_direct)){//si es un nand
-        suma_tf_direct=suma_tf_direct;      
+        suma_tf_direct=suma_tf_direct;
+        numero_no_zero=numero_no_zero-1;      
       }
       else if (temp_direct>maxTf) {// nivel superior
         suma_tf_direct=suma_tf_direct + maxTf;
@@ -258,10 +262,11 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
       double temp_re=num/denom; //temperatura calculada
       //test sobrepaso limites
       if(isnan(temp_re)){//si es un nand
-        suma_tf_rec_spect=suma_tf_rec_spect;      
+        suma_tf_rec_spect=suma_tf_rec_spect;
+        numero_no_zero1=numero_no_zero1-1;   
       }
       else if (temp_re>maxTf) {// nivel superior
-        suma_tf_rec_spect=suma_tf_rec_spect + maxTf;
+        suma_tf_rec_spect=suma_tf_rec_spect + maxTf;  
       }
       else if(temp_re<minTf){ //nivel inferior
         suma_tf_rec_spect=suma_tf_rec_spect + minTf;
@@ -270,7 +275,10 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
         suma_tf_rec_spect=suma_tf_rec_spect + temp_re;
         suma_Radp_rec_spect=suma_Radp_rec_spect+Ap*epsilon*sigma*(pow(temp_re,4) - pow(t_amb,4));//calculo de radiacion de imagen
         suma_Radp2=suma_Radp2+Radp_estimado(T,rho,num_muestras);
+        
+        
       }  
+      
     } 
     /************************************************************************/
     else{
@@ -279,7 +287,7 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
     }
   }
   Temperatu[0]= suma_tf_direct/numero_no_zero;
-  Temperatu[1]= suma_tf_rec_spect/numero_no_zero;  
+  Temperatu[1]= suma_tf_rec_spect/numero_no_zero1;  
   if(numero_no_zero==0){
     Temperatu[0]= 0;
     Temperatu[1]= 0; 
@@ -291,6 +299,8 @@ void calculo_temperatura(double *R,double *G,double *B,int num_pixel, double *Te
     	free(T[i]);
   	}
   free(T);  
+  //printf("la suma del espectro estimado es radp2 es: %0.15f \n",suma_Radp2);
+  //printf("la temperatura es: %0.15f \n",suma_tf_rec_spect);
 }
 
 //////////carga elementos de la matriz T/////////////////////////////
@@ -308,12 +318,15 @@ void leer_matriz_T(double **T, int numero_muestras){
 double Radp_estimado(double **T,double R[3],int num_muestras){
   double Espectro_E[num_muestras];
   double Radp=0;
+  //double sum=0;
   for(int i=0;i<num_muestras;i++){
     Espectro_E[i]=T[i][0]*R[0]+ T[i][1]*R[1]+ T[i][2]*R[2];
+    //sum=sum+Espectro_E[i];
   }
   for(int j=1;j<num_muestras;j++){
-    Radp=Radp+0.5*(Espectro_E[j]-Espectro_E[j-1]);
+    Radp=Radp+0.5*(Espectro_E[j]+Espectro_E[j-1]);
   }
+  //printf("la suma de E es: %0.15f \n",sum);
   return Radp;
 }
 
@@ -331,22 +344,26 @@ void leer_vector(double *R, int num_medidas,char *ruta){
 
 double trapezoidal(double *inten, double *longi, double *calib, int min, int max){
   double area=0;
-  for(int j=min-1;j<max;j++){
-   area=area+0.5*((longi[j]-longi[j-1])*(calib[j]*inten[j]+calib[j-1]*inten[j-1]));
+  for(int j=min;j<max;j++){
+   area=area+0.5*((longi[j]-longi[j-1])*((calib[j]*inten[j])+(calib[j-1]*inten[j-1])));
   }
   return area;
 }
 
-double calculo_radt(){
-  int numero_datos=3648;
-  int i_min=961;
-  int i_max=2724;
+double calculo_radt(char *filename1, char *filename2, char *filename3){
+  int numero_datos=1024;
+  int i_min=1;
+  int i_max=1024;
   double *intensidades=(double *)malloc(numero_datos*sizeof(double)); 
   double *longitud=(double *)malloc(numero_datos*sizeof(double)); 
   double *calibracion=(double *)malloc(numero_datos*sizeof(double));
-  leer_vector(intensidades,numero_datos,"/home/ubuntu/calculo_temperatura/espectro_llama/espectro.txt");
-  leer_vector(longitud,numero_datos,"/home/ubuntu/calculo_temperatura/espectro_llama/wavelength.txt");
-  leer_vector(calibracion,numero_datos,"/home/ubuntu/calculo_temperatura/espectro_llama/calib.txt");
+  leer_vector(intensidades,numero_datos,filename1);
+  leer_vector(longitud,numero_datos,filename2);
+  leer_vector(calibracion,numero_datos,filename3);
   double radt=0.001*trapezoidal(intensidades,longitud,calibracion,i_min,i_max);
+  if(radt<=0){
+    radt=0;
+  }
+  //printf("el radt es: %0.10f \n", radt);
   return radt; 
 }
