@@ -19,22 +19,21 @@ class App():
    def run(self):
       estatus_c=False
       estatus_e=False
-      n=1
-      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama('+str(n)+').tiff'
-      nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro_llama/espectro('+str(n)+').txt'
-      nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro_llama/wavelength('+str(n)+').txt'
+      nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama.tiff'
+      nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro_llama/espectro.txt'
+      nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro_llama/wavelength.txt'
       nombre_archivo_calibracion='/home/ubuntu/calculo_temperatura/espectro_llama/calib.txt'
       nombre_archivo_configuracion='/home/ubuntu/calculo_temperatura/configuracion.txt'
       nombre_archivo_buffet='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet.txt'
       nombre_archivo_buffet_soot='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet_soot.txt'
       Funciones.crear_archivos_de_datos(nombre_archivo_buffet)
+      Funciones.crear_archivos_de_datos(nombre_archivo_buffet_soot)
       ip=Funciones.cargar_ip(nombre_archivo_configuracion)
       puerto=Funciones.cargar_puerto(nombre_archivo_configuracion)
       Funciones.comprobar_ip(ip,logger)
       servidor="opc.tcp://"+ip+":"+puerto  
       nombre_sensor=Funciones.cargar_nombre_sensor(nombre_archivo_configuracion)
       while True:
-         print("procesando imagen",n)
          estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
          estatus_e=Funciones.save_spect(nombre_archivo_intensidad,nombre_archivo_wavelengths,logger) #False#estado espectrometro
          #Funciones.algoritmos_radg_TF(nombre_archivo_imagen,logger)
@@ -43,10 +42,7 @@ class App():
          Funciones.escribir_soot_en_bufer(nombre_archivo_buffet_soot,d_soot) #liena de paso mientras se establecen las variables para soot_propensity
          Funciones.escribir_datos(servidor,nombre_archivo_buffet,nombre_sensor,estatus_c,estatus_e,logger)  
          Funciones.escribir_datos2(servidor,nombre_archivo_buffet_soot,nombre_sensor,logger)  
-         n=n+1;
-         nombre_archivo_imagen='/home/ubuntu/calculo_temperatura/imagenes_llama/Llama('+str(n)+').tiff'
-         nombre_archivo_intensidad='/home/ubuntu/calculo_temperatura/espectro_llama/espectro('+str(n)+').txt'
-         nombre_archivo_wavelengths='/home/ubuntu/calculo_temperatura/espectro_llama/wavelength('+str(n)+').txt'
+         
          
 
 if __name__ == '__main__':
