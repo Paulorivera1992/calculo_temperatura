@@ -7,7 +7,7 @@ import time
 from os import system
 
 def leer_valor(server,nodo):
-  client = Client("opc.tcp://192.168.1.107:4840")
+  client = Client("opc.tcp://192.168.1.114:4840")
   try:
       client.connect()#conecta el servidor
       var=client.get_node("ns=1;s="+nodo)#se obtiene el primer nodo
