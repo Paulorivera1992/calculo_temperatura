@@ -6,6 +6,7 @@ import os
 import time
 from daemon import runner
 import Funciones 
+from time import time
 
 
 class App():
@@ -26,6 +27,7 @@ class App():
       nombre_archivo_configuracion='/home/ubuntu/calculo_temperatura/configuracion.txt'
       nombre_archivo_buffet='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet.txt'
       nombre_archivo_buffet_soot='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet_soot.txt'
+      nombre_archivo_buffet_tiempo='/home/ubuntu/calculo_temperatura/archivos_buffet/Bufet_tiempo.txt'
       Funciones.crear_archivos_de_datos(nombre_archivo_buffet)
       Funciones.crear_archivos_de_datos(nombre_archivo_buffet_soot)
       ip=Funciones.cargar_ip(nombre_archivo_configuracion)
@@ -33,16 +35,31 @@ class App():
       Funciones.comprobar_ip(ip,logger)
       servidor="opc.tcp://"+ip+":"+puerto  
       nombre_sensor=Funciones.cargar_nombre_sensor(nombre_archivo_configuracion)
+      f1=open(nombre_archivo_buffet_tiempo,"w")
+      f1.write('|tiempo_camara | tiempo_espectrometro | tiempo_algoritmo | tiempo_soot | tiempo_opc |\n')
+      f1.close()
       while True:
+         f1=open(nombre_archivo_buffet_tiempo,"a")
+         start_time = time()
          estatus_c=Funciones.save_image(nombre_archivo_imagen,logger)#estado camara
+         tiempo_camara= time() - start_time
+         start_time = time()
          estatus_e=Funciones.save_spect(nombre_archivo_intensidad,nombre_archivo_wavelengths,logger) #False#estado espectrometro
-         #Funciones.algoritmos_radg_TF(nombre_archivo_imagen,logger)
+         tiempo_espectrometro= time() - start_time
+         start_time = time()
          Funciones.algoritmos_radg_TF(nombre_archivo_imagen,nombre_archivo_intensidad,nombre_archivo_wavelengths,nombre_archivo_calibracion,nombre_archivo_buffet,logger)
+         tiempo_algoritmo= time() - start_time
+         start_time = time()
          d_soot=Funciones.Soot_propensity(nombre_archivo_imagen,logger)
+         tiempo_soot= time() - start_time
+         start_time = time()
          Funciones.escribir_soot_en_bufer(nombre_archivo_buffet_soot,d_soot) #liena de paso mientras se establecen las variables para soot_propensity
          Funciones.escribir_datos(servidor,nombre_archivo_buffet,nombre_sensor,estatus_c,estatus_e,logger)  
          Funciones.escribir_datos2(servidor,nombre_archivo_buffet_soot,nombre_sensor,logger)  
-         
+         tiempo_opc= time() - start_time
+         f1.write('| '+str(tiempo_camara)+' | '+str(tiempo_espectrometro)+' | '+str(tiempo_algoritmo)+' | '+str(tiempo_soot)+' | '+str(tiempo_opc)+'|\n')
+         f1.close()
+
          
 
 if __name__ == '__main__':
