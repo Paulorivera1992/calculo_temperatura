@@ -21,42 +21,80 @@ from seabreeze.spectrometers import Spectrometer
 
 ################################################adquisicion de imagenes#################################################################
 
-def save_image(ruta,logger):
-  img = pylon.PylonImage()
+def configurar(camara,t_exposicion,f_adquisicion,ganancia,p_ancho,p_alto,offset_x,offset_y):
+  if(camara!=0):
+      # exposure time
+      camara.ExposureTimeAbs.SetValue(tiempo_exposicion)# En microsegundos forma generica="camera.ExposureTime.SetValue(3500.0)"
+                 
+      # acquisition frame rate 
+      camara.AcquisitionFrameRateEnable.SetValue(True)
+      camara.AcquisitionFrameRateAbs.SetValue(f_adquisicion) #Fotogramas por segundo. forma generica="cam.AcquisitionFrameRate.SetValue(100.00000);"
+          
+      # gain
+      camara.GainAuto.SetValue("Off")#("Off", "Once", "Continuous").
+      camara.GainRaw.SetValue(ganancia); #Ganancia en dB en el rango 0 a 240 para 12 bits y 360 para 8 bit. forma generica="cam.Gain.SetValue(100)"
+          
+      #configuracion de parametros de tamano
+      camara.Width.SetValue(p_ancho)    #ancho en pixeles 1920
+      camara.Height.SetValue(p_alto)   #alto en pixeles 1200
+      camara.OffsetX=offset_x #debe ser multiplo de 2  0
+      camara.OffsetY=offset_y  #debe ser multiplo de 2 0
+
+def guardar_imagen(camara,ruta,logger):
+  try:
+      #inicia captura de imagenes
+      camara.StartGrabbing()
+      result=camara.RetrieveResult(2000, pylon.TimeoutHandling_ThrowException)
+      #result = camara.GrabOne(2000, pylon.TimeoutHandling_ThrowException)#timeout 2000 ms  #otra opcion para adquirir una imagen
+      
+      #codigo para guardar la imagen
+      img = pylon.PylonImage()        
+      img.AttachGrabResultBuffer(result)     
+      img.Save(pylon.ImageFileFormat_Tiff, ruta)
+      img.Release()
+      camara.StopGrabbing()
+      return camara
+  except:
+      logger.error("Error adquiriendo la imagen")
+      return 0
+
+def obtener_imagen(camara,ruta,t_exposicion,f_adquisicion,ganancia,p_ancho,p_alto,offset_x,offset_y,logger):
+    if(camara!=0):
+        camara=guardar_imagen(camara,ruta,logger)
+        return camara
+    else:
+        camara=conectar_camara(logger) 
+        configurar(camara,t_exposicion,f_adquisicion,ganancia,p_ancho,p_alto,offset_x,offset_y)
+        return camara
+
+def conectar_camara(logger):
   tlf = pylon.TlFactory.GetInstance()
   try:
-      cam = pylon.InstantCamera(tlf.CreateFirstDevice())     
+      cam = pylon.InstantCamera(tlf.CreateFirstDevice())
       try:
           cam.Open()
-          #configuracion de parametros de tamano
-          cam.Width.SetValue(1920)
-          cam.Height.SetValue(1200)
-          cam.OffsetX=0 #debe ser multiplo de 2
-          cam.OffsetY=0  #debe ser multiplo de 2
-          #inicia captura de imagenes
-          cam.StartGrabbing()
-          result=cam.RetrieveResult(2000)
-          #codigo para guardar la imagen
-          img.AttachGrabResultBuffer(result)     
-          img.Save(pylon.ImageFileFormat_Tiff, ruta)
-          img.Release()
-          cam.StopGrabbing()
-          return True
-      except: # excepcion en caso de que no se pueda generar la coneccion
-          cam.Close()
-          return False
-      finally:#si finaliza la obtencion de la foto
-          cam.Close()         
-  except: #escepcion en caso de que la camara no este conectada
-      logger.error("Error conectando la camara") 
-      return False  
+          return cam
+      except:
+          logger.error("Error abriendo la camara")
+          return 0
+  except: 
+      logger.error("Error de conexion") 
+      return 0  
 
 ################################################adquisicion de espectros#################################################################
-def save_spect(ruta_intensidad,ruta_longitud,logger):
+def open_spect(t_integracion,logger):
   try:
       spec = Spectrometer.from_first_available()
-      spec.integration_time_micros(20000)
-  
+      spec.integration_time_micros(t_integracion)
+      return spec
+      
+  except: #excepcion en caso de que el espectrometro no este conectada
+      logger.error("Error conectando el espectrometro") 
+     # print("error conectando el espectrometro")
+      return 0 
+      
+def save_spect(spec,ruta_intensidad,ruta_longitud,logger):
+  try:
       wavelengths = spec.wavelengths() #lee longitudes de onda wavelengths in (nm)
       intensities = spec.intensities() #lee intensidades measured intensity array in (a.u.)
 
@@ -66,11 +104,20 @@ def save_spect(ruta_intensidad,ruta_longitud,logger):
       f = open (ruta_intensidad,'wb')
       np.savetxt(f, intensities)
       f.close()
-      return True
+      return spec
       
   except: #excepcion en caso de que el espectrometro no este conectada
-      logger.error("Error conectando el espectrometro") 
-      return False  
+      logger.error("Espectrometro desconectado") 
+      #print("espectrometro desconectado")
+      return 0  
+
+def obtener_espectro(spec,ruta_intensidad,ruta_longitud,t_integracion,logger):
+  if(spec!=0):
+    spec=save_spect(spec,ruta_intensidad,ruta_longitud,logger)
+    return spec
+  else:
+    spec=open_spect(logger,t_integracion)  
+    return spec
  
 ################################################calculo de radg y TF#################################################################      
 
@@ -302,6 +349,62 @@ def cargar_nombre_sensor(archivo):
     print("no se ha asignado nombre del sensor en el archivo de configuracion")
   f.close()
   return nombre
+
+def cargar_tiempo_exposicion(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[3]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_frecuencia_adquicision(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[4]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_ganancia(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[5]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_ancho(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[6]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_alto(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[7]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_offsetx(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[8]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_offsety(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[9]
+  datos=linea.split()
+  f.close()
+  return datos[1]
+
+def cargar_tiempo_integracion(archivo):
+  f = open (archivo,'r')
+  linea=f.readlines()[10]
+  datos=linea.split()
+  f.close()
+  return datos[1]
 
 ################################################comprobacion de ip y puerto#################################################################  
 

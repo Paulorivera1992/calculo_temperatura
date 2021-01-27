@@ -1,15 +1,33 @@
-INFO:2021-01-04 19:23:36,776 - El host/puerto esta disponible
-ERROR:2021-01-04 19:37:16,509 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:38:34,602 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:45:11,539 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:46:06,481 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:53:39,107 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:54:33,529 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:56:27,567 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:58:02,334 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 19:59:43,353 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 20:01:10,500 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 20:04:15,504 - No se puede conectar con el servidor opc
-ERROR:2021-01-04 20:04:44,177 - Error conectando el espectrometro
-ERROR:2021-01-04 20:05:10,400 - Error conectando el espectrometro
-ERROR:2021-01-04 20:05:18,996 - Error calculando soot propensity
+INFO:2021-01-22 20:42:12,382 - El host/puerto esta disponible
+ERROR:2021-01-22 20:43:37,292 - No se puede conectar con el servidor opc
+ERROR:2021-01-22 20:43:38,303 - No se puede conectar con el servidor opc
+ERROR:2021-01-22 20:46:22,005 - Error adquiriendo la imagen
+ERROR:2021-01-22 20:46:24,663 - Error de conexion
+ERROR:2021-01-22 20:46:27,268 - Error de conexion
+ERROR:2021-01-22 20:46:29,996 - Error de conexion
+ERROR:2021-01-22 20:46:32,673 - Error de conexion
+ERROR:2021-01-22 20:46:35,299 - Error de conexion
+ERROR:2021-01-22 20:46:37,940 - Error de conexion
+ERROR:2021-01-22 20:46:40,608 - Error de conexion
+ERROR:2021-01-22 20:46:43,253 - Error de conexion
+ERROR:2021-01-22 20:46:45,896 - Error de conexion
+ERROR:2021-01-22 20:46:48,541 - Error de conexion
+ERROR:2021-01-22 20:46:51,202 - Error de conexion
+ERROR:2021-01-22 20:46:53,892 - Error de conexion
+ERROR:2021-01-22 20:46:56,621 - Error de conexion
+ERROR:2021-01-22 20:46:59,261 - Error de conexion
+ERROR:2021-01-22 20:47:01,935 - Error de conexion
+ERROR:2021-01-22 20:47:04,590 - Error de conexion
+ERROR:2021-01-22 20:47:07,292 - Error de conexion
+ERROR:2021-01-22 20:47:09,988 - Error de conexion
+ERROR:2021-01-22 20:47:13,090 - Espectrometro desconectado
+ERROR:2021-01-22 20:47:25,685 - Error conectando el espectrometro
+ERROR:2021-01-22 20:47:42,407 - Error conectando el espectrometro
+ERROR:2021-01-22 20:47:56,662 - Error conectando el espectrometro
+ERROR:2021-01-22 20:47:59,920 - No se puede conectar con el servidor opc
+ERROR:2021-01-22 20:48:10,657 - Error conectando el espectrometro
+ERROR:2021-01-22 20:48:53,487 - Error calculando soot propensity
+ERROR:2021-01-22 20:49:23,934 - Error calculando soot propensity
+ERROR:2021-01-22 20:49:30,246 - No se puede conectar con el servidor opc
+ERROR:2021-01-22 20:50:06,923 - No se puede conectar con el servidor opc
+ERROR:2021-01-22 20:51:59,011 - Error calculando soot propensity
