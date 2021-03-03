@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from time import time
 from pypylon import pylon
 from opcua import Client
@@ -18,13 +19,14 @@ from scipy.stats import kurtosis
 from skimage.transform import resize
 from skimage.transform import rescale
 from seabreeze.spectrometers import Spectrometer
+from seabreeze.spectrometers import SeaBreezeError
 
 ################################################adquisicion de imagenes#################################################################
 
 def configurar(camara,t_exposicion,f_adquisicion,ganancia,p_ancho,p_alto,offset_x,offset_y):
   if(camara!=0):
       # exposure time
-      camara.ExposureTimeAbs.SetValue(tiempo_exposicion)# En microsegundos forma generica="camera.ExposureTime.SetValue(3500.0)"
+      camara.ExposureTimeAbs.SetValue(t_exposicion)# En microsegundos forma generica="camera.ExposureTime.SetValue(3500.0)"
                  
       # acquisition frame rate 
       camara.AcquisitionFrameRateEnable.SetValue(True)
@@ -78,21 +80,20 @@ def conectar_camara(logger):
           logger.error("Error abriendo la camara")
           return 0
   except: 
-      logger.error("Error de conexion") 
+      logger.error("Error de conexion de la camara") 
       return 0  
 
 ################################################adquisicion de espectros#################################################################
 def open_spect(t_integracion,logger):
   try:
       spec = Spectrometer.from_first_available()
+      #spec = Spectrometer.from_serial_number("S05507")
       spec.integration_time_micros(t_integracion)
       return spec
-      
-  except: #excepcion en caso de que el espectrometro no este conectada
-      logger.error("Error conectando el espectrometro") 
-     # print("error conectando el espectrometro")
-      return 0 
-      
+  except SeaBreezeError as e: # Spectrometer.CalledProcessError as err:
+      #logger.error("Error conectando el espectrometro",e) 
+      return 0
+
 def save_spect(spec,ruta_intensidad,ruta_longitud,logger):
   try:
       wavelengths = spec.wavelengths() #lee longitudes de onda wavelengths in (nm)
@@ -116,7 +117,8 @@ def obtener_espectro(spec,ruta_intensidad,ruta_longitud,t_integracion,logger):
     spec=save_spect(spec,ruta_intensidad,ruta_longitud,logger)
     return spec
   else:
-    spec=open_spect(logger,t_integracion)  
+    logger.error("Error conectando el espectrometro") 
+    spec=open_spect(t_integracion,logger)
     return spec
  
 ################################################calculo de radg y TF#################################################################      
